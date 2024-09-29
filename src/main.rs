@@ -14,7 +14,7 @@ fn main() -> io::Result<()> {
 
     tui.init()?;
     while app.running {
-        tui.draw()?;
+        tui.draw(&mut app)?;
 
         match tui.events.next()? {
             Event::Key(key_event) => handle_key_event(key_event, &mut app)?,

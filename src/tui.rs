@@ -1,4 +1,6 @@
+use crate::app::App;
 use crate::event::EventHandler;
+use crate::ui::render;
 
 use std::io;
 use std::panic;
@@ -37,13 +39,8 @@ impl <B: Backend> Tui<B> {
         Ok(())
     }
 
-    pub fn draw(&mut self) -> io::Result<()> {
-        self.terminal.draw(|frame|  {
-            let greeting = Paragraph::new("Hello Ratatui! (press 'q' to quit)")
-                .white()
-                .on_blue();
-            frame.render_widget(greeting, frame.area());
-        })?;
+    pub fn draw(&mut self, app: &mut App) -> io::Result<()> {
+        self.terminal.draw(|frame|  render(frame, app))?;
         Ok(())
     }
 
