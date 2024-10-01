@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Paragraph}, Frame
+    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Padding, Paragraph}, Frame
 };
 
 use crate::app::{App, AppState};
@@ -57,36 +57,41 @@ fn render_search_popup(frame: &mut Frame, app: &App) {
     // Create the outer block
     let outer_block = Block::default()
         .title("Search")
-        .borders(Borders::ALL);
-        // .style(Style::default().bg(Color::DarkGray));
+        .borders(Borders::ALL)
+        .style(Style::default().bg(Color::DarkGray));
     
     frame.render_widget(outer_block, area);
 
     // Create a layout for the inner area
     let inner_area = Layout::default()
         .direction(Direction::Vertical)
-        .constraints( [
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3)
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Length(3),  // Height for input
+            Constraint::Min(1),     // Remaining space
         ])
-        .margin(2)  // Add margin to separate from outer border
+        .margin(1) 
         .split(area);
 
-    let input = Paragraph::new(app.input.as_str())
-        .style(Style::default().fg(Color::Yellow))
-        .block(Block::default().borders(Borders::ALL).title("Input"));
+    let input_block = Block::default()
+        .borders(Borders::ALL)
+        .title("Input");
 
-    // Render the input widget
-    frame.render_widget(input, inner_area[1]);
+    let input_inner_area = input_block.inner(inner_area[1]);
+
+    let input = Paragraph::new(app.input.as_str())
+        .style(Style::default().fg(Color::White));
+
+    frame.render_widget(input_block, inner_area[1]);
+    frame.render_widget(input, input_inner_area);
 
     // Move the cursor to the input line
     frame.set_cursor_position(
-        Position{
-            x: inner_area[1].x + app.input.len() as u16 + 1,
-            y: inner_area[1].y + 1,
+        Position {
+            x: input_inner_area.x + app.input.len() as u16,
+            y: input_inner_area.y,
         }
-    )
+    );
 }
 
 fn render_footer(frame: &mut Frame, app: &App, area: Rect) {

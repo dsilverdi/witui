@@ -3,9 +3,12 @@ use std::io;
 use witui::app::App;
 use witui::event::{EventHandler, Event};
 use witui::handler::handle_key_event;
+use witui::tracing::initialize_logging;
 use witui::tui::Tui;
 
 fn main() -> io::Result<()> {
+    initialize_logging();
+    
     let mut app: App = App::default();
 
     let terminal = ratatui::init();
