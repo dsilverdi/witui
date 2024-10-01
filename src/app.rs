@@ -37,6 +37,7 @@ impl App {
     }
 
     pub fn set_state(&mut self, state: AppState) {
+        tracing::info!("[set_state]: {:?}", state);
         let curr_sate = std::mem::replace(&mut self.state, state);
         self.prev_state = Some(curr_sate);
     }

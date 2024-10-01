@@ -7,7 +7,7 @@ use witui::tracing::initialize_logging;
 use witui::tui::Tui;
 
 fn main() -> io::Result<()> {
-    initialize_logging();
+    initialize_logging().expect("error initialize log");
     
     let mut app: App = App::default();
 
@@ -16,6 +16,7 @@ fn main() -> io::Result<()> {
     let mut tui = Tui::new(terminal, events);
 
     tui.init()?;
+    tracing::info!("application started");
     while app.running {
         tui.draw(&mut app)?;
 
