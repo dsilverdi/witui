@@ -68,7 +68,7 @@ fn render_search_popup(frame: &mut Frame, app: &App) {
         .constraints([
             Constraint::Length(1),
             Constraint::Length(3),  // Height for input
-            Constraint::Min(1),     // Remaining space
+            Constraint::Length(1),     // Remaining space
         ])
         .margin(1) 
         .split(area);
@@ -84,6 +84,12 @@ fn render_search_popup(frame: &mut Frame, app: &App) {
 
     frame.render_widget(input_block, inner_area[1]);
     frame.render_widget(input, input_inner_area);
+
+    // loading setter
+    if app.is_loading {
+        let loading_text = Paragraph::new("Fetching...").style(Style::default());
+        frame.render_widget(loading_text, inner_area[2]);    
+    }
 
     // Move the cursor to the input line
     frame.set_cursor_position(

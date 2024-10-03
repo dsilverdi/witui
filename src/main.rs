@@ -24,6 +24,8 @@ fn main() -> io::Result<()> {
             Event::Key(key_event) => handle_key_event(key_event, &mut app)?,
             Event::Mouse(_) | Event::Resize(_, _) => {}
         }
+
+        app.listen_scrape_task();
     }
 
     tui.exit()?;

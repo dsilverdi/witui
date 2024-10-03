@@ -11,3 +11,5 @@ pub mod ui;
 pub mod constant;
 
 pub mod tracing;
+
+pub mod scrape;

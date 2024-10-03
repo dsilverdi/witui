@@ -11,14 +11,16 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
 
     if app.state == AppState::Search {
         match key_event.code {
-            KeyCode::Enter => {
-                
-            }
             KeyCode::Backspace => {
                 app.delete_char_input();
             }
             KeyCode::Char(q) => {
                 app.input(q);
+            }
+            KeyCode::Enter => {
+                //app.scrape_page();
+                app.set_loading();
+                app.publish_scrape_task();
             }
 
             // exit state
