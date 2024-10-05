@@ -65,10 +65,12 @@ fn scrape_links(document: Html) -> Option<ScrapeResult> {
                 .and_then(|a| a.value().attr("href"))
                 .map(String::from)?;
 
-            links.push(LinkElement {
-                description: text,
-                href: href_val,
-            });
+            if starts_with_case_insensitive(&href_val, "/wiki/") {
+                links.push(LinkElement {
+                    description: text,
+                    href: href_val,
+                });
+            }
         }
     }
 
