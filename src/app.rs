@@ -1,9 +1,9 @@
-use crate::scrape::{scrape, http_get};
+use crate::scrape::{self, http_get, scrape, ScrapeResult};
 use std::sync::mpsc;
 use std::thread;
 use tokio::runtime::Runtime;
 
-const BASE_URL: &str = "https://en.wikipedia.org/wiki";
+const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
 
 #[derive(Debug, PartialEq)]
 pub enum AppState {
@@ -21,6 +21,7 @@ pub struct App {
     pub prev_state: Option<AppState>,
     pub input: String, 
     pub is_loading: bool,
+    pub content: Option<ScrapeResult>,
     tx: mpsc::Sender<String>,
     rx: mpsc::Receiver<String>
 }
@@ -34,6 +35,7 @@ impl Default for App {
             state: AppState::Init,
             prev_state: None,
             input: "".to_string(),
+            content: None,
             tx,
             rx
         }
@@ -94,8 +96,20 @@ impl App {
     /// on receive scrape signal and result do scrape page
     pub fn listen_scrape_task(&mut self) {
         if let Ok(content) = self.rx.try_recv() {
-            tracing::info!(content);
+            let body_content = scrape(content.as_str());
             self.close_loading();
+            self.save_app_content(body_content);
+        }
+    }
+
+    // save app content
+    fn save_app_content(&mut self, content: Option<ScrapeResult>) {
+        self.content = content;
+        if let Some(content_result)  = &self.content {
+            match content_result {
+                scrape::ScrapeResult::LinksResult(_) => self.set_state(AppState::SearchResult),
+                scrape::ScrapeResult::Basic(res) => tracing::info!("{:?}", res),
+            }
         }
     }
 

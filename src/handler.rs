@@ -10,26 +10,28 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
     }
 
     if app.state == AppState::Search {
-        match key_event.code {
-            KeyCode::Backspace => {
-                app.delete_char_input();
+        if !app.is_loading {
+            match key_event.code {
+                KeyCode::Backspace => {
+                    app.delete_char_input();
+                }
+                KeyCode::Char(q) => {
+                    app.input(q);
+                }
+                KeyCode::Enter => {
+                    //app.scrape_page();
+                    app.set_loading();
+                    app.publish_scrape_task();
+                }
+    
+                // exit state
+                KeyCode::Esc => {
+                    app.back_state();
+                    app.input.clear();
+                }
+               
+                _ => {}
             }
-            KeyCode::Char(q) => {
-                app.input(q);
-            }
-            KeyCode::Enter => {
-                //app.scrape_page();
-                app.set_loading();
-                app.publish_scrape_task();
-            }
-
-            // exit state
-            KeyCode::Esc => {
-                app.back_state();
-                app.input.clear();
-            }
-           
-            _ => {}
         }
     }else{
         match (key_event.code, key_event.modifiers) {
@@ -47,6 +49,16 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
                     app.quit();
                 }
             },
+            (KeyCode::Backspace,_) => {
+                if app.state == AppState::SearchResult || app.state == AppState::Article {
+                    app.set_state(AppState::Init);
+                }
+            },
+            (KeyCode::Esc,_) => {
+                if app.state == AppState::SearchResult || app.state == AppState::Article {
+                    app.set_state(AppState::Init);
+                }
+            }        
             _ => {}
         }
     }

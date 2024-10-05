@@ -13,8 +13,13 @@ pub fn render(frame: &mut Frame, app: &App) {
             Constraint::Length(1),
         ])
         .split(main_area);
-    render_menu_ui(frame, app, chunks[0]);
 
+    if app.state == AppState::Init {
+        render_menu_ui(frame, app, chunks[0]);
+    }else if app.state == AppState::SearchResult {
+        render_search_result(frame, app, chunks[0]);
+    }
+    
     if app.state == AppState::Search {
         render_search_popup(frame, app);
     }
@@ -22,7 +27,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     render_footer(frame, app, chunks[1]);
 }
 
-pub fn render_menu_ui(frame: &mut Frame, app: &App, area: Rect) {
+fn render_menu_ui(frame: &mut Frame, app: &App, area: Rect) {
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -43,6 +48,21 @@ pub fn render_menu_ui(frame: &mut Frame, app: &App, area: Rect) {
         .alignment(Alignment::Center)
         .block(Block::default());
     frame.render_widget(sub_title, main_layout[1]);
+}
+
+fn render_search_result(frame: &mut Frame, app: &App, area: Rect) {
+    let links_paragraph = Paragraph::new(get_list_link(app))
+        .block(Block::default());
+    frame.render_widget(links_paragraph, area);
+}
+
+fn get_list_link(app: &App) -> Vec<Line<'_>> {
+    vec![
+        Line::from("[0] Article XXXX"),
+        Line::from("[1] Article XXXX"),
+        Line::from("[2] Article XXXX"),
+        Line::from("[3] Article XXXX"),
+    ]
 }
 
 // fn render_link_article_ui(frame: &mut Frame, app: &App) {
