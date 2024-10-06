@@ -5,11 +5,14 @@ use witui::event::{EventHandler, Event};
 use witui::handler::handle_key_event;
 use witui::tracing::initialize_logging;
 use witui::tui::Tui;
+use tokio::runtime::Handle;
 
-fn main() -> io::Result<()> {
+#[tokio::main]
+async fn main() -> io::Result<()> {
     initialize_logging().expect("error initialize log");
     
-    let mut app: App = App::default();
+    let runtime_handle = Handle::current();
+    let mut app: App = App::new(runtime_handle);
 
     let terminal = ratatui::init();
     let events = EventHandler::new();

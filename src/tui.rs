@@ -5,8 +5,6 @@ use crate::ui::render;
 use std::io;
 use std::panic;
 
-use ratatui::style::Stylize;
-use ratatui::widgets::Paragraph;
 use ratatui::Terminal;
 use ratatui::backend::Backend;
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture};

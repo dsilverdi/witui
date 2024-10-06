@@ -1,7 +1,6 @@
 use crate::scrape::{self, http_get, scrape, ScrapeResult};
-use std::sync::mpsc;
-use std::thread;
-use tokio::runtime::Runtime;
+use tokio::sync::mpsc;
+use tokio::runtime::Handle;
 
 const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
 
@@ -9,40 +8,67 @@ const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
 pub enum AppState {
     None,
     Init,
-    Search,
     SearchResult, // will render list of wikipedia article
     Article, // render article
     ArticleReference, // render article references
 }
 
+#[derive(Debug, PartialEq)]
+pub enum PopupState {
+    None,
+    Search,
+    Reference
+}
+
 pub struct App {
     pub running: bool,
     pub state: AppState,
+    pub popup_state: PopupState,
     pub prev_state: Option<AppState>,
     pub input: String, 
     pub is_loading: bool,
     pub content: Option<ScrapeResult>,
-    tx: mpsc::Sender<String>,
-    rx: mpsc::Receiver<String>
+    runtime: Handle,
+    rx: mpsc::Receiver<Option<ScrapeResult>>,
+    tx: mpsc::Sender<Option<ScrapeResult>>,
 }
 
-impl Default for App {
-    fn default() -> Self {
-        let (tx, rx) = mpsc::channel();
+// impl Default for App {
+//     fn default() -> Self {
+//         let (tx, rx) = mpsc::channel(100);
+//         let runtime = Handle::current();
+//         Self {
+//             running: true,
+//             is_loading: false,
+//             state: AppState::Init,
+//             popup_state: PopupState::None,
+//             prev_state: None,
+//             input: "".to_string(),
+//             content: None,
+//             runtime,
+//             tx,
+//             rx
+//         }
+//     }
+// }
+
+impl App {
+    pub fn new(runtime: Handle) -> Self {
+        let (tx, rx) = mpsc::channel(100);
         Self {
             running: true,
             is_loading: false,
             state: AppState::Init,
+            popup_state: PopupState::None,
             prev_state: None,
             input: "".to_string(),
             content: None,
+            runtime,
+            rx,
             tx,
-            rx
         }
     }
-}
 
-impl App {
     pub fn quit(&mut self) {
         self.running = false;
     }
@@ -59,6 +85,14 @@ impl App {
         tracing::info!("[set_state]: {:?}", state);
         let curr_sate = std::mem::replace(&mut self.state, state);
         self.prev_state = Some(curr_sate);
+    }
+
+    pub fn set_popup(&mut self, state: PopupState) {
+        self.popup_state = state
+    }
+
+    pub fn close_popup(&mut self) {
+        self.popup_state = PopupState::None
     }
 
     pub fn back_state(&mut self) {
@@ -78,16 +112,25 @@ impl App {
 
     /// Send and create scraping thread
     pub fn publish_scrape_task(&mut self) {
-        let url = BASE_URL.to_string() + self.input.as_str();
+        let url = BASE_URL.to_string() + &self.input;
         let tx = self.tx.clone();
-
-        tracing::info!("spawn search thread");
-        thread::spawn(move || {
-            let rt = Runtime::new().expect("failed create runtime");
-            let html = rt.block_on(http_get(&url));
-            match html {
-                Ok(res) =>  tx.send(res).expect("failed to send html result"),
-                Err(e) => tracing::error!("{:}?",e)
+        tracing::info!("spawn search task");
+        self.runtime.spawn(async move {
+            match http_get(&url).await {
+                Ok(html) => {
+                    tracing::info!("success get http result");
+                    let scrape_result = scrape(&html);
+                    tracing::info!("success scraping");
+                    if let Err(e) = tx.send(scrape_result).await {
+                        tracing::error!("Failed to send scrape result: {}", e);
+                    }
+                },
+                Err(e) => {
+                    tracing::error!("HTTP get error: {:?}", e);
+                    if let Err(e) = tx.send(None).await {
+                        tracing::error!("Failed to send error result: {}", e);
+                    }
+                }
             }
         });
     }
@@ -96,21 +139,25 @@ impl App {
     /// on receive scrape signal and result do scrape page
     pub fn listen_scrape_task(&mut self) {
         if let Ok(content) = self.rx.try_recv() {
-            let body_content = scrape(content.as_str());
+            tracing::info!("receive scrape signal");
             self.close_loading();
-            self.save_app_content(body_content);
+            self.save_app_content(content);
         }
     }
 
     // save app content
-    fn save_app_content(&mut self, content: Option<ScrapeResult>) {
+    pub fn save_app_content(&mut self, content: Option<ScrapeResult>) {
         self.content = content;
         if let Some(content_result)  = &self.content {
             match content_result {
-                scrape::ScrapeResult::LinksResult(_) => self.set_state(AppState::SearchResult),
+                scrape::ScrapeResult::LinksResult(_) => {
+                    self.set_state(AppState::SearchResult);
+                    self.close_popup();
+                },
                 scrape::ScrapeResult::Basic(res) => tracing::info!("{:?}", res),
             }
         }
+
     }
 
 }

@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Padding, Paragraph}, Frame
 };
 
-use crate::app::{App, AppState};
+use crate::app::{App, AppState, PopupState};
 use crate::constant::TITLE;
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -20,7 +20,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         render_search_result(frame, app, chunks[0]);
     }
     
-    if app.state == AppState::Search {
+    if app.popup_state == PopupState::Search {
         render_search_popup(frame, app);
     }
 
@@ -130,7 +130,7 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn get_footer_text(app: &App) -> Vec<Span<'_>> {
-    if app.state == AppState::Search {
+    if app.popup_state == PopupState::Search {
         return vec![
             Span::styled("Enter:", Style::default().fg(Color::Yellow)),
             Span::raw(" Search | "),
