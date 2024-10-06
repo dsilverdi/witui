@@ -26,7 +26,7 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
     
                 // exit state
                 KeyCode::Esc => {
-                    app.back_state();
+                    app.close_popup();
                     app.input.clear();
                 }
                

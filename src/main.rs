@@ -1,18 +1,19 @@
 use std::io;
 
+use tokio::select;
 use witui::app::App;
 use witui::event::{EventHandler, Event};
 use witui::handler::handle_key_event;
 use witui::tracing::initialize_logging;
 use witui::tui::Tui;
-use tokio::runtime::Handle;
+
+use ratatui::backend::Backend;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
     initialize_logging().expect("error initialize log");
     
-    let runtime_handle = Handle::current();
-    let mut app: App = App::new(runtime_handle);
+    let mut app: App = App::new();
 
     let terminal = ratatui::init();
     let events = EventHandler::new();
@@ -20,17 +21,29 @@ async fn main() -> io::Result<()> {
 
     tui.init()?;
     tracing::info!("application started");
-    while app.running {
-        tui.draw(&mut app)?;
+    let runner = run_app(&mut app, &mut tui).await;
+    
+    runner.and(tui.exit())
+}
 
-        match tui.events.next()? {
-            Event::Key(key_event) => handle_key_event(key_event, &mut app)?,
-            Event::Mouse(_) | Event::Resize(_, _) => {}
+async fn run_app(app: &mut App, tui: &mut Tui<impl Backend>) -> io::Result<()> {
+    loop {
+        tui.draw(app)?;
+        select! {
+            Some(key) = tui.events.next() => {
+                match key {
+                    Event::Key(key_event) => handle_key_event(key_event, app)?,
+                    Event::Mouse(_) | Event::Resize(_, _) => {}
+                }
+            }
+            Some(content) = app.rx.recv() => {
+                app.close_loading();
+                app.save_app_content(content);
+            }
+             // graceful shutdown
+            _ = tokio::time::sleep(tokio::time::Duration::from_millis(100)), if !app.running => {
+                return Ok(())
+            }
         }
-
-        app.listen_scrape_task();
     }
-
-    tui.exit()?;
-    Ok(())
 }

@@ -28,32 +28,12 @@ pub struct App {
     pub input: String, 
     pub is_loading: bool,
     pub content: Option<ScrapeResult>,
-    runtime: Handle,
-    rx: mpsc::Receiver<Option<ScrapeResult>>,
+    pub rx: mpsc::Receiver<Option<ScrapeResult>>,
     tx: mpsc::Sender<Option<ScrapeResult>>,
 }
 
-// impl Default for App {
-//     fn default() -> Self {
-//         let (tx, rx) = mpsc::channel(100);
-//         let runtime = Handle::current();
-//         Self {
-//             running: true,
-//             is_loading: false,
-//             state: AppState::Init,
-//             popup_state: PopupState::None,
-//             prev_state: None,
-//             input: "".to_string(),
-//             content: None,
-//             runtime,
-//             tx,
-//             rx
-//         }
-//     }
-// }
-
 impl App {
-    pub fn new(runtime: Handle) -> Self {
+    pub fn new() -> Self {
         let (tx, rx) = mpsc::channel(100);
         Self {
             running: true,
@@ -63,7 +43,6 @@ impl App {
             prev_state: None,
             input: "".to_string(),
             content: None,
-            runtime,
             rx,
             tx,
         }
@@ -115,7 +94,7 @@ impl App {
         let url = BASE_URL.to_string() + &self.input;
         let tx = self.tx.clone();
         tracing::info!("spawn search task");
-        self.runtime.spawn(async move {
+        tokio::spawn(async move {
             match http_get(&url).await {
                 Ok(html) => {
                     tracing::info!("success get http result");
