@@ -1,8 +1,9 @@
+use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Padding, Paragraph}, Frame
 };
 
-use crate::app::{App, AppState, PopupState};
+use crate::{app::{App, AppState, PopupState}, scrape::ScrapeResult};
 use crate::constant::TITLE;
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -56,13 +57,26 @@ fn render_search_result(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(links_paragraph, area);
 }
 
-fn get_list_link(app: &App) -> Vec<Line<'_>> {
-    vec![
-        Line::from("[0] Article XXXX"),
-        Line::from("[1] Article XXXX"),
-        Line::from("[2] Article XXXX"),
-        Line::from("[3] Article XXXX"),
-    ]
+fn get_list_link(app: &App) -> Vec<Line> {
+    let result = match &app.content {
+        None => vec![],
+        Some(ScrapeResult::LinksResult(links)) => {
+            let mut items: Vec<Line>= vec![];
+            for (i, link) in links.iter().enumerate() {
+                items.push(Line::from(vec![
+                    format!(" [{:}] ", i).into(),
+                    Span::raw(link.description.clone()),
+                    " [".into(),
+                    Span::styled(link.href.clone(), Style::default().fg(Color::Blue)),
+                    "]".into(),
+                ]));
+            }
+            return items
+        }
+        _ => vec![],
+    };
+
+    return result
 }
 
 // fn render_link_article_ui(frame: &mut Frame, app: &App) {

@@ -51,6 +51,7 @@ impl <B: Backend> Tui<B> {
     pub fn exit(&mut self) -> io::Result<()> {
         Self::reset()?;
         self.terminal.show_cursor()?;
+        println!("{:?}", terminal::is_raw_mode_enabled());
         Ok(())
     }
 }
