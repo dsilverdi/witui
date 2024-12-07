@@ -6,15 +6,28 @@ pub enum ContentType {
     Article
 }
 
+#[derive(Debug, PartialEq)]
+pub enum TextType {
+    Heading,
+    SubHeading, 
+    Paragraph
+}
+
 pub enum ScrapeResult {
     LinksResult(Vec<LinkElement>),
-    Basic(Vec<String>)
+    Basic(Vec<ContentElement>)
 }
 
 #[derive(Debug)]
 pub struct LinkElement {
     pub description: String,
     pub href: String,
+}
+
+#[derive(Debug)]
+pub struct ContentElement {
+    pub text: String,
+    pub text_type: TextType
 }
 
 impl LinkElement {
@@ -83,9 +96,12 @@ fn scrape_article(document: Html) -> Option<ScrapeResult> {
     let content_selector = Selector::parse("p, .mw-heading2").unwrap();
     // let subheading_selector = Selector::parse(".mw-heading2").unwrap();
 
-    let mut result: Vec<String> = vec![];
+    let mut result: Vec<ContentElement> = vec![];
     let first_heading_el = document.select(&first_heading).next().unwrap().text().collect::<Vec<_>>().join("");
-    result.push(first_heading_el);
+    result.push(ContentElement{
+        text: first_heading_el,
+        text_type: TextType::Heading,
+    });
 
     if let Some(content) = document.select(&body_content_selector).next() {
         for element in content.select(&content_selector) {
@@ -99,11 +115,17 @@ fn scrape_article(document: Html) -> Option<ScrapeResult> {
             }
         
             if tag_name == "p" {
-                result.push(text);
+                result.push(ContentElement{
+                    text: text,
+                    text_type: TextType::Paragraph,
+                });
             } else {
                 // For headings, find the actual h2 text
                 if let Some(h2) = element.select(&Selector::parse("h2").unwrap()).next() {
-                    result.push(h2.text().collect::<String>());
+                    result.push(ContentElement{
+                        text:h2.text().collect::<String>(),
+                        text_type:TextType::SubHeading,
+                    });
                 }
             }
         }

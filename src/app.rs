@@ -1,4 +1,4 @@
-use crate::scrape::{self, http_get, scrape, LinkElement, ScrapeResult};
+use crate::scrape::{self, http_get, scrape, ContentElement, LinkElement, ScrapeResult};
 use tokio::sync::mpsc;
 
 const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
@@ -27,7 +27,7 @@ pub struct App {
     pub input: String, 
     pub is_loading: bool,
     pub chooser_cursor: u8,
-    pub content: Vec<String>,
+    pub content: Vec<ContentElement>,
     pub links: Vec<LinkElement>,
     pub rx: mpsc::Receiver<Option<ScrapeResult>>,
     pub scroll: u16,
@@ -143,7 +143,9 @@ impl App {
                 scrape::ScrapeResult::Basic(res) => {
                     tracing::info!("{:?}", res);
                     self.set_state(AppState::Article);
-                    self.content = res
+                    self.scroll = 0;
+                    self.content = res;
+                    self.close_popup();
                 },
             }
         }

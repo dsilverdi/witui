@@ -1,8 +1,8 @@
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Paragraph, Wrap}, Frame
+    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Modifier, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Paragraph, Wrap}, Frame
 };
 
-use crate::{app::{App, AppState, PopupState}, scrape::ScrapeResult};
+use crate::{app::{App, AppState, PopupState}, scrape::{ScrapeResult, TextType}};
 use crate::constant::TITLE;
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -60,9 +60,35 @@ fn render_search_result(frame: &mut Frame, app: &App, area: Rect) {
 
 fn render_article_result(frame: &mut Frame, app: &App, area: Rect) {
     // Join the content with newlines and create a paragraph
-    let content = app.content.join("\n");
-    
-    let paragraph = Paragraph::new(content)
+    let mut items: Vec<Line> = vec![];
+    for content in app.content.iter() {
+        if content.text_type == TextType::Heading {  // h1 heading
+            items.push(Line::from(vec![
+                Span::styled(
+                    content.text.to_string(),  // Skip the "# " prefix
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                        .add_modifier(Modifier::UNDERLINED)
+                )
+            ]));
+        } else if content.text_type == TextType::SubHeading {  // h2 heading
+            items.push(Line::from("\n"));
+            items.push(Line::from(vec![
+                Span::styled(
+                    content.text.to_string(),  // Skip the "## " prefix
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD)
+                )
+            ]));
+        } else {  // normal text
+            items.push(Line::from("\n"));
+            items.push(Line::from(content.text.to_string()));
+        }
+    }
+
+    let paragraph = Paragraph::new(items)
         .block(Block::default().borders(Borders::ALL).title("Content"))
         .wrap(Wrap { trim: (true) })
         .scroll((app.scroll , 0));
