@@ -1,6 +1,7 @@
 use reqwest;
 use scraper::{ElementRef, Html, Selector};
 
+#[derive(Debug)]
 pub enum ContentType {
     Links,
     Article
@@ -47,15 +48,13 @@ pub async fn http_get(url: &str) -> Result<String, reqwest::Error> {
 pub fn scrape(html: &str) -> Option<ScrapeResult> {
     let document = Html::parse_fragment(html);
     let body_content_selector = Selector::parse("#mw-content-text").unwrap();
-    let p_selector = Selector::parse("p").unwrap();
+    let search_result = Selector::parse("div.searchresults").unwrap();
     
     let mut content_type: ContentType = ContentType::Article;  
     if let Some(body_content_element) = document.select(&body_content_selector).next() {
-        let p_element = body_content_element.select(&p_selector).next();
-        if let Some(p) = p_element {
-            if contains_substr(p.inner_html().as_str(), "may refer to:"){
-                content_type = ContentType::Links;
-            }
+        let result_element = body_content_element.select(&search_result).next();
+        if let Some(p) = result_element {
+            content_type = ContentType::Links;
         }
     }
 
@@ -66,14 +65,14 @@ pub fn scrape(html: &str) -> Option<ScrapeResult> {
 }
 
 fn scrape_links(document: Html) -> Option<ScrapeResult> {
-    let body_content_selector = Selector::parse("#mw-content-text").unwrap();
+    let body_content_selector = Selector::parse("ul.mw-search-results").unwrap();
     let a_selector = Selector::parse("a").unwrap();
-    let li_selector = Selector::parse("li").unwrap();
+    let result_heading = Selector::parse("div.mw-search-result-heading").unwrap();
 
     let mut links: Vec<LinkElement> = vec![];
     if let Some(content_element) = document.select(&body_content_selector).next() {
-        for li in content_element.select(&li_selector) {
-            let text = get_text_excluding_nested_li(&li);
+        for li in content_element.select(&result_heading) {
+            let text = li.text().collect();
             let href_val = li.select(&a_selector).next()
                 .and_then(|a| a.value().attr("href"))
                 .map(String::from)?;
@@ -91,6 +90,7 @@ fn scrape_links(document: Html) -> Option<ScrapeResult> {
 }
 
 fn scrape_article(document: Html) -> Option<ScrapeResult> {
+    tracing::info!("scrape article {:?}", document);
     let first_heading = Selector::parse("#firstHeading").unwrap();
     let body_content_selector = Selector::parse("div.mw-content-ltr.mw-parser-output").unwrap();
     let content_selector = Selector::parse("p, .mw-heading2").unwrap();

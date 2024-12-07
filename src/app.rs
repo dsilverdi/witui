@@ -2,6 +2,7 @@ use crate::scrape::{self, http_get, scrape, ContentElement, LinkElement, ScrapeR
 use tokio::sync::mpsc;
 
 const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
+const SEARCH_URL: &str = "https://en.wikipedia.org/w/index.php?search={}&title=Special:Search&profile=advanced&fulltext=1&ns0=1";
 const HOST: &str = "https://en.wikipedia.org";
 
 #[derive(Debug, PartialEq)]
@@ -84,9 +85,13 @@ impl App {
         self.input.pop();
     }
 
+    fn urlify_input(&mut self) -> String {
+        return self.input.split_whitespace().collect::<Vec<&str>>().join("+");
+    }
+
     /// Send and create scraping thread
     pub fn publish_scrape_task(&mut self) {
-        let url = BASE_URL.to_string() + &self.input;
+        let url = format!("https://en.wikipedia.org/w/index.php?search={}&title=Special:Search&profile=advanced&fulltext=1&ns0=1", self.urlify_input());
         return self.scrape_url(url);
     }
 
