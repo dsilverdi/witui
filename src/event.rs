@@ -1,6 +1,5 @@
 use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, MouseEvent};
 use tokio::sync::mpsc;
-use tokio::time::interval;
 use std::time::Duration;
 
 pub enum Event {

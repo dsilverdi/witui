@@ -1,6 +1,5 @@
-use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Padding, Paragraph}, Frame
+    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Paragraph}, Frame
 };
 
 use crate::{app::{App, AppState, PopupState}, scrape::ScrapeResult};
@@ -63,8 +62,14 @@ fn get_list_link(app: &App) -> Vec<Line> {
         Some(ScrapeResult::LinksResult(links)) => {
             let mut items: Vec<Line>= vec![];
             for (i, link) in links.iter().enumerate() {
+                let link_number = if app.chooser_cursor % links.len() as u8 == i as u8 {
+                    format!(" > [{:}] ", i).to_string()
+                }else {
+                    format!(" [{:}] ", i).to_string()
+                };
+
                 items.push(Line::from(vec![
-                    format!(" [{:}] ", i).into(),
+                    link_number.into(),
                     Span::raw(link.description.clone()),
                     " [".into(),
                     Span::styled(link.href.clone(), Style::default().fg(Color::Blue)),

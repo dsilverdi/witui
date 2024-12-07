@@ -41,6 +41,21 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
                     app.set_popup(PopupState::Search);
                 } 
             },
+
+            // cursor position
+            (KeyCode::Up, _) => {
+                if app.state == AppState::SearchResult {
+                    if app.chooser_cursor > 0 {
+                        app.chooser_cursor -= 1;
+                    }
+                }
+            }
+
+            (KeyCode::Down, _) => {
+                if app.state == AppState::SearchResult {
+                    app.chooser_cursor += 1;
+                }
+            }
     
             // quit app
             (KeyCode::Char('c'), KeyModifiers::CONTROL) => app.quit(),
@@ -58,7 +73,7 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
                 if app.state == AppState::SearchResult || app.state == AppState::Article {
                     app.set_state(AppState::Init);
                 }
-            }        
+            },        
             _ => {}
         }
     }

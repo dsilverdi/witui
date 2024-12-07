@@ -1,6 +1,5 @@
 use crate::scrape::{self, http_get, scrape, ScrapeResult};
 use tokio::sync::mpsc;
-use tokio::runtime::Handle;
 
 const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
 
@@ -24,9 +23,9 @@ pub struct App {
     pub running: bool,
     pub state: AppState,
     pub popup_state: PopupState,
-    pub prev_state: Option<AppState>,
     pub input: String, 
     pub is_loading: bool,
+    pub chooser_cursor: u8,
     pub content: Option<ScrapeResult>,
     pub rx: mpsc::Receiver<Option<ScrapeResult>>,
     tx: mpsc::Sender<Option<ScrapeResult>>,
@@ -40,7 +39,7 @@ impl App {
             is_loading: false,
             state: AppState::Init,
             popup_state: PopupState::None,
-            prev_state: None,
+            chooser_cursor: 0,
             input: "".to_string(),
             content: None,
             rx,
@@ -61,9 +60,7 @@ impl App {
     }
 
     pub fn set_state(&mut self, state: AppState) {
-        tracing::info!("[set_state]: {:?}", state);
-        let curr_sate = std::mem::replace(&mut self.state, state);
-        self.prev_state = Some(curr_sate);
+        self.state = state
     }
 
     pub fn set_popup(&mut self, state: PopupState) {
@@ -72,13 +69,6 @@ impl App {
 
     pub fn close_popup(&mut self) {
         self.popup_state = PopupState::None
-    }
-
-    pub fn back_state(&mut self) {
-        if let Some(s) = self.prev_state.take() {
-            self.state = s;
-            self.prev_state = None;
-        }
     }
 
     pub fn input(&mut self, c: char) {
@@ -114,7 +104,6 @@ impl App {
         });
     }
 
-
     /// on receive scrape signal and result do scrape page
     pub fn listen_scrape_task(&mut self) {
         if let Ok(content) = self.rx.try_recv() {
@@ -131,6 +120,7 @@ impl App {
             match content_result {
                 scrape::ScrapeResult::LinksResult(_) => {
                     self.set_state(AppState::SearchResult);
+                    self.chooser_cursor = 0;
                     self.close_popup();
                 },
                 scrape::ScrapeResult::Basic(res) => tracing::info!("{:?}", res),
