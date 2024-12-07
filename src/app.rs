@@ -1,7 +1,8 @@
-use crate::scrape::{self, http_get, scrape, ScrapeResult};
+use crate::scrape::{self, http_get, scrape, LinkElement, ScrapeResult};
 use tokio::sync::mpsc;
 
 const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
+const HOST: &str = "https://en.wikipedia.org";
 
 #[derive(Debug, PartialEq)]
 pub enum AppState {
@@ -26,8 +27,10 @@ pub struct App {
     pub input: String, 
     pub is_loading: bool,
     pub chooser_cursor: u8,
-    pub content: Option<ScrapeResult>,
+    pub content: Vec<String>,
+    pub links: Vec<LinkElement>,
     pub rx: mpsc::Receiver<Option<ScrapeResult>>,
+    pub scroll: u16,
     tx: mpsc::Sender<Option<ScrapeResult>>,
 }
 
@@ -41,7 +44,9 @@ impl App {
             popup_state: PopupState::None,
             chooser_cursor: 0,
             input: "".to_string(),
-            content: None,
+            links: vec![],
+            content: vec![],
+            scroll: 0,
             rx,
             tx,
         }
@@ -82,6 +87,18 @@ impl App {
     /// Send and create scraping thread
     pub fn publish_scrape_task(&mut self) {
         let url = BASE_URL.to_string() + &self.input;
+        return self.scrape_url(url);
+    }
+
+    pub fn process_article(&mut self) {
+        let index = (self.chooser_cursor % self.links.len() as u8) as usize;
+        let href = &self.links[index].href.as_str();
+        let url = HOST.to_string() + href;
+        tracing::info!("Scrapping:  {}", url);
+        return self.scrape_url(url);
+    }
+
+    fn scrape_url(&mut self, url: String) {
         let tx = self.tx.clone();
         tracing::info!("spawn search task");
         tokio::spawn(async move {
@@ -115,18 +132,30 @@ impl App {
 
     // save app content
     pub fn save_app_content(&mut self, content: Option<ScrapeResult>) {
-        self.content = content;
-        if let Some(content_result)  = &self.content {
+        if let Some(content_result)  = content {
             match content_result {
-                scrape::ScrapeResult::LinksResult(_) => {
+                scrape::ScrapeResult::LinksResult(res) => {
                     self.set_state(AppState::SearchResult);
                     self.chooser_cursor = 0;
                     self.close_popup();
+                    self.links = res;
                 },
-                scrape::ScrapeResult::Basic(res) => tracing::info!("{:?}", res),
+                scrape::ScrapeResult::Basic(res) => {
+                    tracing::info!("{:?}", res);
+                    self.set_state(AppState::Article);
+                    self.content = res
+                },
             }
         }
 
+    }
+    
+    pub fn scroll_up(&mut self) {
+        self.scroll = self.scroll.saturating_sub(1);
+    }
+    
+    pub fn scroll_down(&mut self) {
+        self.scroll = self.scroll.saturating_add(1);
     }
 
 }

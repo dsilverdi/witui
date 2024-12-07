@@ -49,11 +49,25 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
                         app.chooser_cursor -= 1;
                     }
                 }
+
+                if app.state == AppState::Article {
+                    app.scroll_up();
+                }
+            }
+
+            (KeyCode::Enter, _) => {
+                if app.state == AppState::SearchResult {
+                    app.process_article();
+                }
             }
 
             (KeyCode::Down, _) => {
                 if app.state == AppState::SearchResult {
                     app.chooser_cursor += 1;
+                }
+
+                if app.state == AppState::Article {
+                    app.scroll_down();
                 }
             }
     

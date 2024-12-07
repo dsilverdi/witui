@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Paragraph}, Frame
+    layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Paragraph, Wrap}, Frame
 };
 
 use crate::{app::{App, AppState, PopupState}, scrape::ScrapeResult};
@@ -18,6 +18,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         render_menu_ui(frame, app, chunks[0]);
     }else if app.state == AppState::SearchResult {
         render_search_result(frame, app, chunks[0]);
+    }else if app.state == AppState::Article {
+        render_article_result(frame, app, chunks[0]);
     }
     
     if app.popup_state == PopupState::Search {
@@ -56,32 +58,36 @@ fn render_search_result(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(links_paragraph, area);
 }
 
+fn render_article_result(frame: &mut Frame, app: &App, area: Rect) {
+    // Join the content with newlines and create a paragraph
+    let content = app.content.join("\n");
+    
+    let paragraph = Paragraph::new(content)
+        .block(Block::default().borders(Borders::ALL).title("Content"))
+        .wrap(Wrap { trim: (true) })
+        .scroll((app.scroll , 0));
+    
+    frame.render_widget(paragraph, area);
+}
+
 fn get_list_link(app: &App) -> Vec<Line> {
-    let result = match &app.content {
-        None => vec![],
-        Some(ScrapeResult::LinksResult(links)) => {
-            let mut items: Vec<Line>= vec![];
-            for (i, link) in links.iter().enumerate() {
-                let link_number = if app.chooser_cursor % links.len() as u8 == i as u8 {
-                    format!(" > [{:}] ", i).to_string()
-                }else {
-                    format!(" [{:}] ", i).to_string()
-                };
+    let mut items: Vec<Line>= vec![];
+    for (i, link) in app.links.iter().enumerate() {
+        let link_number = if app.chooser_cursor % app.links.len() as u8 == i as u8 {
+            format!(" > [{:}] ", i).to_string()
+        }else {
+            format!(" [{:}] ", i).to_string()
+        };
 
-                items.push(Line::from(vec![
-                    link_number.into(),
-                    Span::raw(link.description.clone()),
-                    " [".into(),
-                    Span::styled(link.href.clone(), Style::default().fg(Color::Blue)),
-                    "]".into(),
-                ]));
-            }
-            return items
-        }
-        _ => vec![],
-    };
-
-    return result
+        items.push(Line::from(vec![
+            link_number.into(),
+            Span::raw(link.description.clone()),
+            " [".into(),
+            Span::styled(link.href.clone(), Style::default().fg(Color::Blue)),
+            "]".into(),
+        ]));
+    }
+    return items
 }
 
 // fn render_link_article_ui(frame: &mut Frame, app: &App) {

@@ -78,7 +78,37 @@ fn scrape_links(document: Html) -> Option<ScrapeResult> {
 }
 
 fn scrape_article(document: Html) -> Option<ScrapeResult> {
-    Some(ScrapeResult::Basic(vec![]))
+    let first_heading = Selector::parse("#firstHeading").unwrap();
+    let body_content_selector = Selector::parse("div.mw-content-ltr.mw-parser-output").unwrap();
+    let content_selector = Selector::parse("p, .mw-heading2").unwrap();
+    // let subheading_selector = Selector::parse(".mw-heading2").unwrap();
+
+    let mut result: Vec<String> = vec![];
+    let first_heading_el = document.select(&first_heading).next().unwrap().text().collect::<Vec<_>>().join("");
+    result.push(first_heading_el);
+
+    if let Some(content) = document.select(&body_content_selector).next() {
+        for element in content.select(&content_selector) {
+            let tag_name = element.value().name();
+            let text = element.text().collect::<Vec<_>>().join("");
+            // result.push(text);
+
+             // Skip empty paragraphs
+            if text.trim().is_empty() {
+                continue;
+            }
+        
+            if tag_name == "p" {
+                result.push(text);
+            } else {
+                // For headings, find the actual h2 text
+                if let Some(h2) = element.select(&Selector::parse("h2").unwrap()).next() {
+                    result.push(h2.text().collect::<String>());
+                }
+            }
+        }
+    }
+    Some(ScrapeResult::Basic(result))
 }
 
 fn contains_substr(s: &str, substr: &str) -> bool {
