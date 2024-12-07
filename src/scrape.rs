@@ -1,5 +1,5 @@
 use reqwest;
-use scraper::{ElementRef, Html, Selector};
+use scraper::{Html, Selector};
 
 #[derive(Debug)]
 pub enum ContentType {
@@ -54,7 +54,9 @@ pub fn scrape(html: &str) -> Option<ScrapeResult> {
     if let Some(body_content_element) = document.select(&body_content_selector).next() {
         let result_element = body_content_element.select(&search_result).next();
         if let Some(p) = result_element {
-            content_type = ContentType::Links;
+            if p.inner_html() != "" {
+                content_type = ContentType::Links;
+            }
         }
     }
 
@@ -133,19 +135,19 @@ fn scrape_article(document: Html) -> Option<ScrapeResult> {
     Some(ScrapeResult::Basic(result))
 }
 
-fn contains_substr(s: &str, substr: &str) -> bool {
-    (0..substr.len())
-        .flat_map(|i| substr[i..].chars())
-        .any(|c| s.contains(c))
-}
+// fn contains_substr(s: &str, substr: &str) -> bool {
+//     (0..substr.len())
+//         .flat_map(|i| substr[i..].chars())
+//         .any(|c| s.contains(c))
+// }
 
 fn starts_with_case_insensitive(main_string: &str, prefix: &str) -> bool {
     main_string.to_lowercase().starts_with(&prefix.to_lowercase())
 }
 
-fn get_text_excluding_nested_li(element: &ElementRef) -> String {
-    let nested_li_selector = Selector::parse("li").unwrap();
-    element.text().filter(|&text| {
-        !element.select(&nested_li_selector).any(|nested_li| nested_li.text().any(|t| t == text))
-    }).collect::<Vec<_>>().join(" ").trim().to_string()
-}
+// fn get_text_excluding_nested_li(element: &ElementRef) -> String {
+//     let nested_li_selector = Selector::parse("li").unwrap();
+//     element.text().filter(|&text| {
+//         !element.select(&nested_li_selector).any(|nested_li| nested_li.text().any(|t| t == text))
+//     }).collect::<Vec<_>>().join(" ").trim().to_string()
+// }

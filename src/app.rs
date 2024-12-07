@@ -1,8 +1,6 @@
 use crate::scrape::{self, http_get, scrape, ContentElement, LinkElement, ScrapeResult};
 use tokio::sync::mpsc;
 
-const BASE_URL: &str = "https://en.wikipedia.org/wiki/";
-const SEARCH_URL: &str = "https://en.wikipedia.org/w/index.php?search={}&title=Special:Search&profile=advanced&fulltext=1&ns0=1";
 const HOST: &str = "https://en.wikipedia.org";
 
 #[derive(Debug, PartialEq)]

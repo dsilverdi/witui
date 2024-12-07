@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Position, Rect}, style::{Color, Modifier, Style}, text::{Line, Span}, widgets::{Block, Borders, Clear, Paragraph, Wrap}, Frame
 };
 
-use crate::{app::{App, AppState, PopupState}, scrape::{ScrapeResult, TextType}};
+use crate::{app::{App, AppState, PopupState}, scrape::TextType};
 use crate::constant::TITLE;
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -15,7 +15,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         .split(main_area);
 
     if app.state == AppState::Init {
-        render_menu_ui(frame, app, chunks[0]);
+        render_menu_ui(frame, chunks[0]);
     }else if app.state == AppState::SearchResult {
         render_search_result(frame, app, chunks[0]);
     }else if app.state == AppState::Article {
@@ -29,7 +29,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     render_footer(frame, app, chunks[1]);
 }
 
-fn render_menu_ui(frame: &mut Frame, app: &App, area: Rect) {
+fn render_menu_ui(frame: &mut Frame, area: Rect) {
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
