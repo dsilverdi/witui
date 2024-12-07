@@ -17,9 +17,17 @@ pub fn render(frame: &mut Frame, app: &App) {
     if app.state == AppState::Init {
         render_menu_ui(frame, chunks[0]);
     }else if app.state == AppState::SearchResult {
-        render_search_result(frame, app, chunks[0]);
+        if app.links.len() == 0 {
+            render_empty_content(frame, chunks[0]);
+        }else{
+            render_search_result(frame, app, chunks[0]);
+        }
     }else if app.state == AppState::Article {
-        render_article_result(frame, app, chunks[0]);
+        if app.content.len() == 0 {
+            render_empty_content(frame, chunks[0]);
+        }else {
+            render_article_result(frame, app, chunks[0]);    
+        }
     }
     
     if app.popup_state == PopupState::Search {
@@ -50,6 +58,13 @@ fn render_menu_ui(frame: &mut Frame, area: Rect) {
         .alignment(Alignment::Center)
         .block(Block::default());
     frame.render_widget(sub_title, main_layout[1]);
+}
+
+
+fn render_empty_content(frame: &mut Frame, area: Rect) {
+    let paragraph = Paragraph::new("No Matching Results")
+        .block(Block::default());
+    frame.render_widget(paragraph, area);
 }
 
 fn render_search_result(frame: &mut Frame, app: &App, area: Rect) {
