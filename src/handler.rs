@@ -79,8 +79,12 @@ pub fn handle_key_event(key_event: KeyEvent, app: &mut App) -> io::Result<()>{
                 }
             },
             (KeyCode::Backspace,_) => {
-                if app.state == AppState::SearchResult || app.state == AppState::Article {
+                if app.state == AppState::SearchResult{
                     app.set_state(AppState::Init);
+                }
+
+                if app.state == AppState::Article {
+                    app.set_state(AppState::SearchResult);
                 }
             },
             (KeyCode::Esc,_) => {

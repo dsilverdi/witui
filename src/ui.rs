@@ -205,12 +205,20 @@ fn get_footer_text(app: &App) -> Vec<Span<'_>> {
         ]
     }
 
+    let mut footer = 
     vec![
         Span::styled("Ctrl + `s`:", Style::default().fg(Color::Yellow)),
         Span::raw(" Search | "),
         Span::styled("q:", Style::default().fg(Color::Yellow)),
         Span::raw(" Quit"),
-    ]
+    ];
+
+    if app.state != AppState::Init {
+        footer.push(Span::styled("| Backspace:", Style::default().fg(Color::Yellow)));
+        footer.push(Span::raw(" Back"))
+    }
+
+    return footer
 }
 
 // helper function to create a centered rect using up certain percentage of the available rect `r`
